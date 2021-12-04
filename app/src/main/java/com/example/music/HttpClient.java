@@ -12,13 +12,10 @@ public class HttpClient {
     private static Gson jsonConvert = new Gson();
 
     private static OkHttpClient okHttpClient = new OkHttpClient();  //创建OkHttpClient对象
-
     private static final String SERVER_HOST = "\n" +
             "https://cloud-music-api-f494k233x-mgod-monkey.vercel.app/search?keywords= ";  //音乐查询API服务地址
-
     private static final String SERVER_HOST1 = "\n" +
             "https://cloud-music-api-f494k233x-mgod-monkey.vercel.app/song/url?id= ";  //音乐url查询API服务地址
-
     public static <T> void query(String name,final Class<T> tClass
             , final IHttpCallback callback){
         String parameters = name;  //请求参数
@@ -27,13 +24,11 @@ public class HttpClient {
                 .url(SERVER_HOST + parameters) //请求接口
                 .get()
                 .build();   //创建Request 对象
-
         okHttpClient.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Request request, IOException e) {
                 callback.onSuccess(null,false);
             }
-
             @Override
             public void onResponse(Response response) throws IOException {   //得到Response 对象
                 try{

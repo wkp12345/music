@@ -180,11 +180,7 @@ public class Music_Activity extends AppCompatActivity implements View.OnClickLis
         switch (v.getId()){
             case R.id.btn_play://播放按钮点击事件
                 String position=getFilesDir().getAbsolutePath()+"/"+name+".mp3";  //歌曲的文件路径
-                if(finishdowmload(position)){
-                    musicControl.play(position);
-                }else {
-                    Toast.makeText(Music_Activity.this, "音乐还没下载完，请稍后播放", Toast.LENGTH_LONG).show();
-                }
+                musicControl.play(position);
                 break;
             case R.id.btn_pause://暂停按钮点击事件
                 musicControl.pausePlay();
@@ -228,11 +224,7 @@ public class Music_Activity extends AppCompatActivity implements View.OnClickLis
         name=list.get(j);
         name_song.setText(name);
         String position=getFilesDir().getAbsolutePath()+"/"+name+".mp3";  //文件路径
-        if(finishdowmload(position)){
-            musicControl.play(position);
-        }else {
-            Toast.makeText(Music_Activity.this, "音乐还没下载完，请稍后播放", Toast.LENGTH_LONG).show();
-        }
+        musicControl.play(position);
     }
 
     /**
@@ -250,25 +242,8 @@ public class Music_Activity extends AppCompatActivity implements View.OnClickLis
         name=list.get(j);
         name_song.setText(name);
         String position=getFilesDir().getAbsolutePath()+"/"+name+".mp3";
-        if(finishdowmload(position)){
-            musicControl.play(position);
-        }else {
-            Toast.makeText(Music_Activity.this, "音乐还没下载完，请稍后播放", Toast.LENGTH_LONG).show();
-        }
-    }
+        musicControl.play(position);
 
-    /**
-     * 判断音乐是否下载完了
-     * @param path
-     * @return
-     */
-    private boolean finishdowmload(String path){
-        File f=new File(path);
-        if(f.length()==0){
-            return false;
-        }else {
-            return true;
-        }
     }
 
     @Override

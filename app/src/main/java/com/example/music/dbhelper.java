@@ -10,8 +10,8 @@ import androidx.annotation.Nullable;
  * 创建数据库
  */
 public class dbhelper extends SQLiteOpenHelper {
-    public static final String CREATE_DIARY = "create table music (" +    //关注城市
-            "id text primary key ,name text,url text" +
+    public static final String CREATE_DIARY = "create table music (" +    //音乐
+            "id text primary key ,name text,length text" +
             ")";
 
     public dbhelper(@Nullable Context context) {

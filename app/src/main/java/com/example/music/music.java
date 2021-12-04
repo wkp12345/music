@@ -3,14 +3,14 @@ package com.example.music;
 public class music {
     private String name;
     private String id;
-    private String url="";
+    private String length="-1";
 
-    public void setUrl(String url) {
-        this.url = url;
+    public String getLength() {
+        return length;
     }
 
-    public String getUrl() {
-        return url;
+    public void setLength(String length) {
+        this.length = length;
     }
 
     public String getName() {

@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 
+import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -22,6 +23,7 @@ import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
@@ -33,6 +35,7 @@ import java.util.Locale;
 public class FileService extends IntentService {
     private final String TAG="LOGCAT";
     private int fileLength, downloadLength;//文件大小
+    private String name;   //文件名
     private Handler handler = new Handler();
     public FileService() {
         super("DownLoadService");//这就是个name
@@ -51,8 +54,8 @@ public class FileService extends IntentService {
             if (!dirs.exists()) {// 检查文件夹是否存在，不存在则创建
                 dirs.mkdir();
             }
-
-            File file = new File(dirs, bundle.getString("song")+".mp3");//输出文件名
+            name=bundle.getString("song");
+            File file = new File(dirs, name+".mp3");//输出文件名
             Log.d(TAG,"下载启动："+downloadUrl+" --to-- "+ file.getPath());
             // 开始下载
             downloadFile(downloadUrl, file);
@@ -85,6 +88,13 @@ public class FileService extends IntentService {
             fileLength = _downLoadCon.getContentLength();  //得到文件大小
             _inputStream = _downLoadCon.getInputStream();   //读取网页内容（字符串流）
             int respondCode = _downLoadCon.getResponseCode();//服务器返回的响应码
+
+            musicdao musicdao=new musicdao(this);
+            music music= musicdao.findname(name);
+            music.setLength(fileLength+"");
+            musicdao.update(music);
+            musicdao.close();
+
             if (respondCode == 200) {
                 byte[] buffer = new byte[1024*8];// 数据块，等下把读取到的数据储存在这个数组，这个东西的大小看需要定，不要太小。
                 int len;

@@ -1,6 +1,7 @@
 package com.example.music;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -12,7 +13,9 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> namelist;  //已下载的音乐列表
     private MyBaseAdapter myadapter;
     private String url;  //音乐的url
+    private int i=-1;  //判断第几次点击下载
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,9 +64,8 @@ public class MainActivity extends AppCompatActivity {
         listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                url=list.get(position).getUrl();
-                String ss=getFilesDir().getAbsolutePath()+"/"+list.get(position).getName()+".mp3";   //查看该音乐文件是否存在
-                if(hasdownload(ss)){   //存在则播放
+                //查看该音乐文件是否存在
+                if(finishdownload(position)){   //存在则播放
                     initnamelist();
                     //创建Intent对象，参数就是从frag1跳转到MusicActivity
                     Intent intent=new Intent(MainActivity.this, Music_Activity.class);
@@ -71,28 +74,30 @@ public class MainActivity extends AppCompatActivity {
                     //开始跳转
                     startActivity(intent);
                 }else{               //不存在就下载
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    //设置弹出框标题
-                    builder.setTitle("是否下载歌曲？");
-                    builder.setItems(new String[]{"是","否"}, new DialogInterface.OnClickListener() {
-                        //类型码
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            switch (which) {
-                                case 0:
-                                    Intent intent1=new Intent(MainActivity.this,FileService.class);
-                                    intent1.putExtra("download_url",url);
-                                    intent1.putExtra("song",list.get(position).getName());
-                                    startService(intent1);
-                                    break;
-                                case 1:
-                                    break;
-                                default:
-                                    break;
+                    if(i==position){   //如果是第二次点击下载就提示正在下载
+                        Toast.makeText(MainActivity.this, "正在下载", Toast.LENGTH_SHORT).show();
+                    }else{     //如果是第一次点击下载就下载
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                        //设置弹出框标题
+                        builder.setTitle("是否下载歌曲？");
+                        builder.setItems(new String[]{"是","否"}, new DialogInterface.OnClickListener() {
+                            //类型码
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                switch (which) {
+                                    case 0:
+                                        i=position;
+                                        geturlanddownload(position);    //得到url并下载音乐文件
+                                        break;
+                                    case 1:
+                                        break;
+                                    default:
+                                        break;
+                                }
                             }
-                        }
-                    });
-                    builder.create().show();
+                        });
+                        builder.create().show();
+                    }
                 }
             }
         });
@@ -137,8 +142,7 @@ public class MainActivity extends AppCompatActivity {
     private void initnamelist(){
         namelist=new ArrayList<>();
         for (int i=0;i<list.size();i++){
-            String ss=getFilesDir().getAbsolutePath()+"/"+list.get(i).getName()+".mp3";
-            if(hasdownload(ss)){
+            if(finishdownload(i)){
                 String s=list.get(i).getName();
                 namelist.add(s);
             }
@@ -163,7 +167,9 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 if(!exist(live)){
-                                    geturl(live);             //得到音乐的URL并把音乐存进数据库
+                                    dao.insert(live);             //把音乐存进数据库
+                                    list.add(live);              //把音乐存进列表
+                                    myadapter.notifyDataSetChanged();    //刷新listview
                                 }else{
                                     System.out.println("+********该歌曲已存在");
                                 }
@@ -190,11 +196,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * 根据音乐id得到音乐的url并把音乐存进数据库
-     * @param mm
+     * 根据音乐id得到音乐的url并下载音乐文件
+     * @param position
      */
-    private void geturl(music mm){
-        HttpClient.geturl(mm.getId(),musicurl.class, new HttpClient.IHttpCallback() {
+    private void geturlanddownload(int position){
+        HttpClient.geturl(list.get(position).getId(),musicurl.class, new HttpClient.IHttpCallback() {
             @Override
             public <T> void onSuccess(T result, boolean isSuccess) {
                 if (isSuccess) {
@@ -203,12 +209,12 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             if (m.getData()!=null) {
-                                url=m.getData().get(0).getUrl();
-                                mm.setUrl(url);
-                                dao.insert(mm);
-                                list.add(mm);
+                                url=m.getData().get(0).getUrl();  //得到音乐的url
                                 System.out.println("*****************"+m.getData().get(0).getUrl());
-                                myadapter.notifyDataSetChanged();
+                                Intent intent1=new Intent(MainActivity.this,FileService.class);
+                                intent1.putExtra("download_url",url);
+                                intent1.putExtra("song",list.get(position).getName());
+                                startService(intent1);
                             }
                         }
                     });
@@ -231,16 +237,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * 判断音乐是否下载
-     * @param strFile
+     * 判断音乐是否下载完了
+     * @param position
      * @return
      */
-    public boolean hasdownload(String strFile){
+    public boolean finishdownload(int position){
+        String strFile=getFilesDir().getAbsolutePath()+"/"+list.get(position).getName()+".mp3";
         try
         {
             File f=new File(strFile);
             if(!f.exists())
             {
+                return false;
+            }else if(f.length()!=Integer.parseInt(dao.findname(list.get(position).getName()).getLength())){
                 return false;
             }
         }

@@ -16,8 +16,8 @@ public class musicdao {
         dbhelper = new dbhelper(context);// 初始化databaseHelper对象
     }
     public void insert(music music){
-        String s="insert into music (id,name,url) values ('"+music.getId()+"','"+
-                music.getName()+"','"+music.getUrl()+"')";
+        String s="insert into music (id,name,length) values ('"+music.getId()+"','"+
+                music.getName()+"','"+music.getLength()+"')";
         db.execSQL(s);
     }
     @SuppressLint("Range")
@@ -31,7 +31,7 @@ public class musicdao {
             music d = new music();
             d.setId(cursor.getString(cursor.getColumnIndex("id")));
             d.setName(cursor.getString(cursor.getColumnIndex("name")));
-            d.setName(cursor.getString(cursor.getColumnIndex("url")));
+            d.setLength(cursor.getString(cursor.getColumnIndex("length")));
             return d;
         }
         return null;// 没有返回null
@@ -46,11 +46,32 @@ public class musicdao {
             music d = new music();
             d.setId(cursor.getString(cursor.getColumnIndex("id")));
             d.setName(cursor.getString(cursor.getColumnIndex("name")));
-            d.setUrl(cursor.getString(cursor.getColumnIndex("url")));
+            d.setLength(cursor.getString(cursor.getColumnIndex("length")));
             list.add(d);
         }
         return list;
     }
+    @SuppressLint("Range")
+    public music findname(String a) {
+        db = dbhelper.getWritableDatabase();
+        String sql = "select * from music where name=?";
+        String[] selectionArgs = new String[] { a };
+        Cursor cursor = db.rawQuery(sql, selectionArgs);
+        if (cursor.moveToNext())// 判断Cursor中是否有数据
+        {
+            music d = new music();
+            d.setId(cursor.getString(cursor.getColumnIndex("id")));
+            d.setName(cursor.getString(cursor.getColumnIndex("name")));
+            d.setLength(cursor.getString(cursor.getColumnIndex("length")));
+            return d;
+        }
+        return null;// 没有返回null
+    }
+    public void update(music m){
+        this.delete(m);
+        this.insert(m);
+    }
+
     public void delete(music d) {
         db = dbhelper.getWritableDatabase();
         String sql = "delete from music where id=?";
